@@ -4,6 +4,7 @@ import { getWeekDates, formatDateKey, formatShortDay, isToday } from '../utils/d
 
 const MEALS = [
   { id: 'breakfast', emoji: '🌅', label: 'Breakfast' },
+  { id: 'snacks',    emoji: '🍎', label: 'Snacks'    },
   { id: 'lunch',     emoji: '☀️',  label: 'Lunch'     },
   { id: 'dinner',    emoji: '🌙', label: 'Dinner'    },
 ]
@@ -26,10 +27,7 @@ export default function MealPlanner() {
     if (!editing) return
     setMeals((prev) => ({
       ...prev,
-      [editing.dateKey]: {
-        ...(prev[editing.dateKey] || {}),
-        [editing.mealId]: editValue.trim(),
-      },
+      [editing.dateKey]: { ...(prev[editing.dateKey] || {}), [editing.mealId]: editValue.trim() },
     }))
     setEditing(null)
   }
@@ -42,7 +40,7 @@ export default function MealPlanner() {
       </div>
 
       <div className="overflow-x-auto pb-2">
-        <div className="grid min-w-[640px]" style={{ gridTemplateColumns: 'repeat(7, 1fr)', gap: '12px' }}>
+        <div className="grid min-w-[640px]" style={{ gridTemplateColumns: 'repeat(7, 1fr)', gap: '10px' }}>
           {weekDates.map((date) => {
             const dateKey = formatDateKey(date)
             const today = isToday(date)
@@ -50,21 +48,19 @@ export default function MealPlanner() {
               <div
                 key={dateKey}
                 className={`bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col ${
-                  today ? 'ring-2 ring-sage-300' : ''
+                  today ? 'ring-2 ring-teal-300' : ''
                 }`}
               >
-                {/* Day header */}
-                <div className={`py-2.5 text-center ${today ? 'bg-sage-100' : 'bg-cream-50'}`}>
-                  <p className={`text-xs font-bold uppercase tracking-wider ${today ? 'text-sage-600' : 'text-gray-400'}`}>
+                <div className={`py-2.5 text-center ${today ? 'bg-teal-50' : 'bg-cream-50'}`}>
+                  <p className={`text-xs font-bold uppercase tracking-wider ${today ? 'text-teal-600' : 'text-gray-400'}`}>
                     {formatShortDay(date)}
                   </p>
-                  <p className={`text-lg font-extrabold leading-tight ${today ? 'text-sage-700' : 'text-gray-600'}`}>
+                  <p className={`text-lg font-extrabold leading-tight ${today ? 'text-teal-700' : 'text-gray-600'}`}>
                     {date.getDate()}
                   </p>
                 </div>
 
-                {/* Meals */}
-                <div className="p-2 space-y-2 flex-1">
+                <div className="p-2 space-y-1.5 flex-1">
                   {MEALS.map(({ id, emoji, label }) => {
                     const value = get(dateKey, id)
                     const isActive = editing?.dateKey === dateKey && editing?.mealId === id
@@ -84,8 +80,8 @@ export default function MealPlanner() {
                               if (e.key === 'Enter') saveEdit()
                               if (e.key === 'Escape') setEditing(null)
                             }}
-                            className="w-full text-xs border border-sage-300 rounded-lg px-2 py-1.5 outline-none"
-                            placeholder="What's for eat?"
+                            className="w-full text-xs border border-coral-300 rounded-lg px-2 py-1.5 outline-none"
+                            placeholder="Add…"
                           />
                         ) : (
                           <button
@@ -93,7 +89,7 @@ export default function MealPlanner() {
                             className={`w-full text-left text-xs px-2 py-1.5 rounded-lg transition-colors leading-tight ${
                               value
                                 ? 'text-gray-600 bg-cream-50 hover:bg-cream-100'
-                                : 'text-gray-300 border border-dashed border-gray-200 hover:border-sage-300 hover:text-sage-400'
+                                : 'text-gray-300 border border-dashed border-gray-200 hover:border-coral-200 hover:text-coral-400'
                             }`}
                           >
                             {value || 'Add…'}

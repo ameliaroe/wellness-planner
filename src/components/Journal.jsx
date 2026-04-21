@@ -1,47 +1,50 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import useLocalStorage from '../hooks/useLocalStorage'
 import { formatDateKey, formatDisplayDate, addDays, isToday } from '../utils/dates'
 
-const PROMPTS = [
-  'What are you grateful for today?',
-  'What intention are you setting for today?',
-  'How are you feeling right now?',
-  'What would make today a great day?',
-  'What did you learn or appreciate recently?',
-]
+const EMPTY_ENTRY = {
+  grateful: ['', '', ''],
+  priorities: ['', '', ''],
+  affirmation: '',
+  makeItGreat: '',
+}
 
 export default function Journal() {
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [entries, setEntries] = useLocalStorage('journalEntries', {})
-  const [promptIdx, setPromptIdx] = useState(() => Math.floor(Math.random() * PROMPTS.length))
+  const [entries, setEntries] = useLocalStorage('journalEntries5min', {})
 
   const dateKey = formatDateKey(currentDate)
-  const entry = entries[dateKey] ?? ''
+  const entry = entries[dateKey] ?? EMPTY_ENTRY
   const todayFlag = isToday(currentDate)
 
-  const updateEntry = (text) => {
-    setEntries((prev) => ({ ...prev, [dateKey]: text }))
+  const update = (field, value) => {
+    setEntries((prev) => ({
+      ...prev,
+      [dateKey]: { ...EMPTY_ENTRY, ...(prev[dateKey] || {}), [field]: value },
+    }))
+  }
+
+  const updateList = (field, idx, value) => {
+    const list = [...(entry[field] || ['', '', ''])]
+    list[idx] = value
+    update(field, list)
   }
 
   const navigate = (days) => {
     setCurrentDate((d) => {
       const next = addDays(d, days)
-      if (days > 0 && isToday(next)) return new Date()
-      return next
+      return days > 0 && isToday(next) ? new Date() : next
     })
   }
 
-  const canGoForward = !isToday(currentDate)
-  const totalEntries = Object.values(entries).filter(Boolean).length
+  const totalEntries = Object.keys(entries).length
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
+      <div className="mb-5">
         <h2 className="text-2xl font-extrabold text-gray-700">Daily Journal</h2>
-        <p className="text-gray-400 text-sm mt-0.5">
-          Capture your thoughts, reflections, and intentions
-        </p>
+        <p className="text-gray-400 text-sm mt-0.5">Five minutes to set the tone for your day</p>
       </div>
 
       {/* Date navigation */}
@@ -54,57 +57,99 @@ export default function Journal() {
         </button>
         <div className="flex-1 text-center">
           <p className="font-semibold text-gray-700 text-sm">{formatDisplayDate(currentDate)}</p>
-          {todayFlag && (
-            <span className="text-xs font-semibold text-sage-500">Today</span>
-          )}
+          {todayFlag && <span className="text-xs font-bold text-coral-400">Today</span>}
         </div>
         <button
           onClick={() => navigate(1)}
-          disabled={!canGoForward}
+          disabled={!todayFlag ? false : true}
           className={`p-1.5 rounded-full transition-colors ${
-            canGoForward
-              ? 'hover:bg-cream-100 text-gray-400 hover:text-gray-600'
-              : 'text-gray-200 cursor-not-allowed'
+            todayFlag ? 'text-gray-200 cursor-not-allowed' : 'hover:bg-cream-100 text-gray-400 hover:text-gray-600'
           }`}
         >
           <ChevronRight size={19} />
         </button>
       </div>
 
-      {/* Writing area */}
-      <div className="bg-white rounded-2xl shadow-sm p-6">
-        {/* Prompt */}
-        <div className="flex items-start justify-between mb-4">
-          <p className="text-sm text-gray-400 italic flex-1 pr-4">{PROMPTS[promptIdx]}</p>
-          <button
-            onClick={() => setPromptIdx((i) => (i + 1) % PROMPTS.length)}
-            className="flex items-center gap-1 text-xs text-sage-400 hover:text-sage-600 transition-colors flex-shrink-0"
-          >
-            <Sparkles size={13} />
-            New prompt
-          </button>
-        </div>
+      <div className="space-y-4">
 
-        <textarea
-          value={entry}
-          onChange={(e) => updateEntry(e.target.value)}
-          placeholder="Write freely here… your thoughts are safe and only yours."
-          className="w-full h-56 md:h-72 resize-none outline-none text-gray-600 text-sm leading-relaxed placeholder:text-gray-300"
-        />
+        {/* Gratitude */}
+        <Section title="🌸 I am grateful for…" accent="coral">
+          {[0, 1, 2].map((i) => (
+            <NumberedInput
+              key={i}
+              num={i + 1}
+              value={entry.grateful?.[i] ?? ''}
+              onChange={(v) => updateList('grateful', i, v)}
+              placeholder={['a person in my life', 'something small I noticed', 'an opportunity I have'][i]}
+            />
+          ))}
+        </Section>
 
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-cream-100">
-          <span className="text-xs text-gray-300">
-            {entry.split(/\s+/).filter(Boolean).length} words
-          </span>
-          <span className="text-xs text-sage-400 font-medium">✓ Auto-saved</span>
-        </div>
+        {/* What would make today great */}
+        <Section title="✨ What would make today great?" accent="teal">
+          <textarea
+            value={entry.makeItGreat ?? ''}
+            onChange={(e) => update('makeItGreat', e.target.value)}
+            placeholder="If today ended perfectly, what would have happened?"
+            className="w-full h-24 resize-none outline-none text-sm text-gray-600 placeholder:text-gray-300 leading-relaxed"
+          />
+        </Section>
+
+        {/* Top 3 priorities */}
+        <Section title="🎯 My top 3 priorities today" accent="coral">
+          {[0, 1, 2].map((i) => (
+            <NumberedInput
+              key={i}
+              num={i + 1}
+              value={entry.priorities?.[i] ?? ''}
+              onChange={(v) => updateList('priorities', i, v)}
+              placeholder={['most important task', 'second priority', 'third priority'][i]}
+            />
+          ))}
+        </Section>
+
+        {/* Daily affirmation */}
+        <Section title="💛 Daily affirmation" accent="teal">
+          <input
+            type="text"
+            value={entry.affirmation ?? ''}
+            onChange={(e) => update('affirmation', e.target.value)}
+            placeholder="I am…"
+            className="w-full outline-none text-sm text-gray-600 placeholder:text-gray-300 font-medium"
+          />
+        </Section>
+
       </div>
 
-      {totalEntries > 0 && (
-        <p className="text-center text-xs text-gray-300 mt-4">
-          ✨ You have {totalEntries} journal {totalEntries === 1 ? 'entry' : 'entries'}
-        </p>
-      )}
+      <p className="text-center text-xs text-gray-300 mt-5">
+        ✓ Auto-saved · {totalEntries} {totalEntries === 1 ? 'entry' : 'entries'} total
+      </p>
+    </div>
+  )
+}
+
+function Section({ title, children }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-5">
+      <p className="text-sm font-bold text-gray-600 mb-3">{title}</p>
+      {children}
+    </div>
+  )
+}
+
+function NumberedInput({ num, value, onChange, placeholder }) {
+  return (
+    <div className="flex items-center gap-3 py-1.5 border-b border-cream-100 last:border-0">
+      <span className="w-5 h-5 rounded-full bg-cream-200 text-gray-400 text-xs font-bold flex items-center justify-center flex-shrink-0">
+        {num}
+      </span>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="flex-1 outline-none text-sm text-gray-600 placeholder:text-gray-300"
+      />
     </div>
   )
 }
